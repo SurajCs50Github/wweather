@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Air Quality Dashboard Pro</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #1a202c, #000000);
+      color: white;
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .card {
+      background-color: #1f2937;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      transition: all 0.2s ease;
+    }
+    .icon {
+      width: 24px;
+      height: 24px;
+    }
+    .icon-lg {
+      width: 32px;
+      height: 32px;
+    }
+    .icon-xl {
+      width: 40px;
+      height: 40px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-outline {
+      border: 1px solid white;
+      background: transparent;
+    }
+    .btn-outline:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    .btn-primary {
+      background-color: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+    .btn-secondary {
+      background-color: #4b5563;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background-color: #374151;
+    }
+    .input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      background-color: #111827;
+      border: 1px solid #374151;
+      color: white;
+    }
+    .input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+    .dropdown {
+      position: relative;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #1f2937;
+      min-width: 160px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      z-index: 1;
+      border-radius: 0.375rem;
+      margin-top: 0.5rem;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .progress-bar {
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .gradient-green {
+      background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+    }
+    .gradient-yellow {
+      background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%);
+    }
+    .gradient-red {
+      background: linear-gradient(90deg, #EF4444 0%, #F87171 100%);
+    }
+    .gradient-purple {
+      background: linear-gradient(90deg, #8B5CF6 0%, #A78BFA 100%);
+    }
+    .aqi-box {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .aqi-good {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.4));
+      border: 1px solid #10B981;
+      color: #10B981;
+    }
+    .aqi-moderate {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.4));
+      border: 1px solid #F59E0B;
+      color: #F59E0B;
+    }
+    .aqi-poor {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.4));
+      border: 1px solid #EF4444;
+      color: #EF4444;
+    }
+    .chemical-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #374151;
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+    .tab {
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active {
+      border-bottom: 2px solid #3b82f6;
+      color: #3b82f6;
+    }
+    .pulse {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="max-w-6xl mx-auto space-y-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-4xl font-bold">Home Air Quality</h1>
+        <p class="text-lg text-gray-400 mt-2">Real-time monitoring from your HVAC vents</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="pulse mr-2"></div>
+        <span class="text-sm text-green-400">Live Monitoring</span>
+        <button class="btn btn-secondary">Settings</button>
+        <div class="dropdown">
+          <button class="btn btn-outline">Export Data</button>
+          <div class="dropdown-content">
+            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-700">CSV Format</a>
+            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-700">PDF Report</a>
+            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-700">Smart Home API</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Air Quality Overview -->
+    <div class="card p-6 rounded-2xl">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="flex items-center gap-4">
+          <!-- Gauge icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-xl text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+          <div>
+            <p class="text-sm text-gray-400">Current Air Quality</p>
+            <h2 class="text-3xl font-semibold text-green-300">Good (AQI 42)</h2>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-xs text-gray-400">Updated: Today, 2:45 PM</span>
+              <div class="flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                <span class="text-xs text-green-400">5% better than yesterday</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <button class="btn btn-outline">View Trends</button>
+          <button class="btn btn-primary">Refresh Data</button>
+        </div>
+      </div>
+      
+      <div class="mt-6">
+        <h3 class="text-lg font-medium mb-2">Air Quality Composition</h3>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+          <div class="tooltip">
+            <div class="chemical-tag bg-green-900 text-green-300">
+              <span>CO₂: 512 ppm</span>
+            </div>
+            <span class="tooltiptext">Carbon Dioxide: Normal levels for indoor air</span>
+          </div>
+          <div class="tooltip">
+            <div class="chemical-tag bg-green-900 text-green-300">
+              <span>PM2.5: 6 μg/m³</span>
+            </div>
+            <span class="tooltiptext">Fine Particulate Matter: Very good quality</span>
+          </div>
+          <div class="tooltip">
+            <div class="chemical-tag bg-yellow-900 text-yellow-300">
+              <span>VOCs: 245 ppb</span>
+            </div>
+            <span class="tooltiptext">Volatile Organic Compounds: Slightly elevated, but acceptable</span>
+          </div>
+          <div class="tooltip">
+            <div class="chemical-tag bg-green-900 text-green-300">
+              <span>O₃: 18 ppb</span>
+            </div>
+            <span class="tooltiptext">Ozone: Low concentration, good air quality</span>
+          </div>
+          <div class="tooltip">
+            <div class="chemical-tag bg-green-900 text-green-300">
+              <span>Humidity: 42%</span>
+            </div>
+            <span class="tooltiptext">Relative Humidity: Optimal range for comfort</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-6">
+        <canvas id="airQualityChart" height="100"></canvas>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="card p-4 flex items-center gap-3">
+        <div class="p-3 bg-blue-900 bg-opacity-30 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-400">Temperature</p>
+          <p class="text-lg font-semibold">72°F</p>
+        </div>
+      </div>
+      <div class="card p-4 flex items-center gap-3">
+        <div class="p-3 bg-blue-900 bg-opacity-30 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-400">Humidity</p>
+          <p class="text-lg font-semibold">42%</p>
+        </div>
+      </div>
+      <div class="card p-4 flex items-center gap-3">
+        <div class="p-3 bg-purple-900 bg-opacity-30 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-400">CO₂ Level</p>
+          <p class="text-lg font-semibold">512 ppm</p>
+        </div>
+      </div>
+      <div class="card p-4 flex items-center gap-3">
+        <div class="p-3 bg-green-900 bg-opacity-30 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-400">Air Freshness</p>
+          <p class="text-lg font-semibold">93%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Tabs -->
+    <div class="card p-4 rounded-xl">
+      <div class="flex border-b border-gray-700 mb-4">
+        <div class="tab active">All Rooms</div>
+        <div class="tab">Living Room</div>
+        <div class="tab">Kitchen</div>
+        <div class="tab">Bedroom</div>
+        <div class="tab">Basement</div>
+      </div>
+      
+      <!-- Room Stats Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Living Room -->
+        <div class="card card-hover p-5 bg-opacity-50">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <h3 class="text-xl font-semibold">Living Room</h3>
+                <div class="tooltip">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="tooltiptext">This room has good air quality</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 mb-3">
+                <div class="aqi-box aqi-good">39</div>
+                <div>
+                  <p class="text-gray-400 text-sm">Air Quality Index</p>
+                  <h4 class="text-xl font-bold text-green-300">Good</h4>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-outline text-sm">Details</button>
+          </div>
+          
+          <div class="space-y-3 mt-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>PM2.5</span>
+                <span class="text-green-300">5 μg/m³</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-green h-full" style="width: 10%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>VOCs</span>
+                <span class="text-green-300">180 ppb</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-green h-full" style="width: 15%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>CO₂</span>
+                <span class="text-green-300">490 ppm</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-green h-full" style="width: 25%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kitchen -->
+        <div class="card card-hover p-5 bg-opacity-50">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <h3 class="text-xl font-semibold">Kitchen</h3>
+                <div class="tooltip">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="tooltiptext">Moderate air quality - cooking detected</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 mb-3">
+                <div class="aqi-box aqi-moderate">58</div>
+                <div>
+                  <p class="text-gray-400 text-sm">Air Quality Index</p>
+                  <h4 class="text-xl font-bold text-yellow-300">Moderate</h4>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-outline text-sm">Details</button>
+          </div>
+          
+          <div class="space-y-3 mt-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>PM2.5</span>
+                <span class="text-yellow-300">12 μg/m³</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-yellow h-full" style="width: 25%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>VOCs</span>
+                <span class="text-yellow-300">350 ppb</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-yellow h-full" style="width: 45%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>CO₂</span>
+                <span class="text-yellow-300">620 ppm</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-yellow h-full" style="width: 35%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bedroom -->
+        <div class="card card-hover p-5 bg-opacity-50">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <h3 class="text-xl font-semibold">Bedroom</h3>
+                <div class="tooltip">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="tooltiptext">Good air quality - optimal for sleeping</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 mb-3">
+                <div class="aqi-box aqi-good">47</div>
+                <div>
+                  <p class="text-gray-400 text-sm">Air Quality Index</p>
+                  <h4 class="text-xl font-bold text-green-300">Good</h4>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-outline text-sm">Details</button>
+          </div>
+          
+          <div class="space-y-3 mt-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>PM2.5</span>
+                <span class="text-green-300">7 μg/m³</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-green h-full" style="width: 15%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>VOCs</span>
+                <span class="text-green-300">210 ppb</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-green h-full" style="width: 25%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>CO₂</span>
+                <span class="text-green-300">530 ppm</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-green h-full" style="width: 30%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Basement -->
+        <div class="card card-hover p-5 bg-opacity-50">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <h3 class="text-xl font-semibold">Basement</h3>
+                <div class="tooltip">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="tooltiptext">Poor air quality - possible mold detected</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 mb-3">
+                <div class="aqi-box aqi-poor">66</div>
+                <div>
+                  <p class="text-gray-400 text-sm">Air Quality Index</p>
+                  <h4 class="text-xl font-bold text-red-300">Poor</h4>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-outline text-sm">Details</button>
+          </div>
+          
+          <div class="space-y-3 mt-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>PM2.5</span>
+                <span class="text-red-300">18 μg/m³</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-red h-full" style="width: 40%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>VOCs</span>
+                <span class="text-red-300">420 ppb</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-red h-full" style="width: 55%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span>CO₂</span>
+                <span class="text-yellow-300">640 ppm</span>
+              </div>
+              <div class="progress-bar bg-gray-700">
+                <div class="gradient-yellow h-full" style="width: 40%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Status & Special Features -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Filter Status -->
+      <div class="card p-6 rounded-xl">
+        <div class="space-y-4">
+          <div class="flex items-center gap-4">
+            <!-- Filter icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-lg text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <div>
+              <p class="text-sm text-gray-400">Filter Status</p>
+              <p class="text-lg font-semibold">Last changed: 3 weeks ago</p>
